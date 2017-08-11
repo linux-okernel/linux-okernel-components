@@ -96,9 +96,10 @@ static int __init kernel_vuln_module_init(void)
     printk("KV: Device <%s> Initialized in kernel.\n", VULN_DEVICE_NAME);
     printk("KV: Trying to disable SMEP\n");
     cr4 = native_read_cr4();
+    printk("KV: CR4 is currently set to %#lx\n", cr4);
     cr4 = cr4 & ~X86_CR4_SMEP;
     native_write_cr4(cr4);
-    printk("KV: SMEP disabled\n");
+    printk("KV: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
     return 0;
 }
 

@@ -34,65 +34,86 @@ if not, write to:
  */
 void oktargets(unsigned long (*address)[]);
 #define BUFFMAX 1000
+#define PG_BIT 10
 
 static unsigned long mod_start = (unsigned long)PFN_ALIGN(MODULES_VADDR);
 static unsigned long mod_end = (unsigned long)PFN_ALIGN(MODULES_END);
-static unsigned long targets[7];
+static unsigned long targets[8];
 static unsigned long kw_text;
 static unsigned long kw_etext;
 static unsigned long kw__start_rodata;
 static unsigned long kw__end_rodata;
+static int (*kw_set_memory_rw)(unsigned long addr, int numpages);
 static void *(*kw_text_poke)(void *addr, const void *opcode, size_t len);
-struct mutex *text_mutex;
+struct mutex *kw_text_mutex;
 static char *kw_linux_banner;
 static char old_banner[BUFFMAX];
 
-static const char *patched_banner = "Succesfully patched linux_banner";
+static const char *patched_banner = "Successfully patched linux_banner";
+static const unsigned long pgmask = ~(((unsigned long)1 << PG_BIT) - 1);
 
 static void __init get_targets(void)
 {
-	printk("Invoking oktargets %#lx\n", (unsigned long) oktargets);
+	printk("kwriter pgmask %#lx\n", pgmask);
+	printk("kwriter invoking oktargets %#lx\n", (unsigned long) oktargets);
 	oktargets(&targets);
-	printk("Returned from oktargets\n");
+	printk("kwriter returned from oktargets\n");
 	kw_text = targets[0];
 	kw_etext = targets[1];
 	kw__start_rodata = targets[2];
 	kw__end_rodata = targets[3];
-	kw_text_poke = (void *(*)(void *, const void *, size_t))targets[4];
-	text_mutex = (struct mutex *)targets[5];
-	kw_linux_banner = (char *)targets[6];
+	kw_set_memory_rw = (int (*)(unsigned long, int))targets[4];
+	kw_linux_banner = (char *)targets[5];
+	kw_text_poke = (void *(*)(void *, const void *, size_t))targets[6];
+	text_mutex = (struct mutex *)targets[7];
 
 	printk(KERN_INFO "kwriter _text %#lx\n", kw_text);
 	printk(KERN_INFO "kwriter _etext %#lx\n", kw_etext);
 	printk(KERN_INFO "kwriter __start_rodata va %#lx\n", kw__start_rodata);
 	printk(KERN_INFO "kwriter __end_rodata va %#lx\n", kw__end_rodata);
-	printk(KERN_INFO "kwriter text_poke %#lx\n",
-	       (unsigned long) kw_text_poke);
-	printk(KERN_INFO "kwriter text_mutex %#lx\n",
-	       (unsigned long )text_mutex);
+	printk(KERN_INFO "kwriter set_memory_rw %#lx\n",
+	       (unsigned long) kw_set_memory_rw);
 	printk(KERN_INFO "kwriter linux_banner %s\n", kw_linux_banner);
 	printk(KERN_INFO "kwriter module space start va %#lx\n", mod_start);
 	printk(KERN_INFO "kwriter module space end va %#lx\n", mod_end);
 }
-
-static void update_banner(void)
-{
-	size_t n;
+ static void old_update_banner(void)
+ {
+ 	size_t n;
 	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
 	if (!mutex_trylock(text_mutex)) {
 		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
-		return;
-	}
+ 	}
 	printk(KERN_INFO "kwriter Got text_mutex\n");
-	if (!(strncpy(old_banner, kw_linux_banner, BUFFMAX))) {
+ 	if (!(strncpy(old_banner, kw_linux_banner, BUFFMAX))) {
 		printk(KERN_INFO "kwriter strncpy failed\n");
 		goto end;
-	}
-	printk(KERN_INFO "kwriter attempting to patch linux_banner");
+ 	}
+ 	printk(KERN_INFO "kwriter attempting to patch linux_banner");
 	n = strlen(patched_banner);
 //	kw_text_poke((void *)kw_linux_banner, (void *)patched_banner, n);
 end:
 	mutex_unlock(text_mutex);
+ }
+
+static void update_banner(void)
+{
+	size_t n;
+	printk(KERN_INFO "kwriter attempting to set page rw\n");
+	if (kw_set_memory_rw(((unsigned long)kw_linux_banner) && pgmask, 1)) {
+		printk(KERN_INFO "kwriter kw_set_memory_rw failed\n");
+		return;
+	}
+	if (!(strncpy(old_banner, kw_linux_banner, BUFFMAX))) {
+		printk(KERN_INFO "kwriter failed to save banner\n");
+		return;
+	}
+	printk(KERN_INFO "kwriter attempting to patch linux_banner");
+	n = strlen(kw_linux_banner + 1);
+	if (!(strncpy(kw_linux_banner, patched_banner, n))) {
+ 		printk(KERN_INFO "kwriter patching banner failed\n");
+		return;
+	}
 }
 
 static int __init kwriter_module_init(void)

@@ -133,9 +133,12 @@ static void set_mem_rw(unsigned long va)
 	pgprot_val(new_prot) |= pgprot_val(__pgprot(_PAGE_RW));
 	new_pte = pfn_pte(pfn, new_prot);
 	set_pte_atomic(kpte, new_pte);
+	kw_flush_tlb_all();
+	kw_flush_tlb_kernel_range(va, va + psize);
+
 	return;
 }
-
+/*
  static void old_update_banner(void)
  {
  	size_t n;
@@ -154,37 +157,19 @@ static void set_mem_rw(unsigned long va)
 end:
 	mutex_unlock(kw_text_mutex);
  }
+*/
 
 static void update_banner(void)
 {
 	unsigned long va = ((unsigned long)kw_linux_proc_banner) & pgmask;
-	printk(KERN_INFO "kwriter attempting to set page rw %#lx\n", va);
-	if (kw_set_memory_rw(va, 1)) {
-		printk(KERN_INFO "kwriter kw_set_memory_rw failed\n");
-		return;
-	}
-	kw_flush_tlb_all();
-	kw_flush_tlb_kernel_range(va, va + psize);
-	printk(KERN_INFO "kwriter flushed tlb and page\n");
+
 	if (!(strncpy(old_banner, kw_linux_proc_banner, BUFFMAX))) {
 		printk(KERN_INFO "kwriter failed to save banner\n");
 		return;
 	}
-	check_va((unsigned long)kw_linux_proc_banner);
-	check_va(va);
-	/* Check that we can still read kw_linux_proc_banner get the
-	 * protections from the page table and check they are what we
-	 * expect them to be. Insert memory barriers?
-	 */
-	//printk(KERN_INFO "Calling okset_mem_rw");
-	//okset_mem_rw(va);
 	printk(KERN_INFO "Calling set_mem_rw");
 	set_mem_rw(va);
-
 	check_va(va);
-	kw_flush_tlb_all();
-	kw_flush_tlb_kernel_range(va, va + psize);
-	printk(KERN_INFO "kwriter flushed tlb and page\n");
 	printk(KERN_INFO "Checking we can still read linux_proc_banner %s\n",
 	       kw_linux_proc_banner);
 	len_banner = strlen(kw_linux_proc_banner) + 1;
@@ -196,8 +181,21 @@ static void update_banner(void)
  		printk(KERN_INFO "kwriter patching banner failed\n");
 		return;
 	}
-	check_va((unsigned long)kw_linux_proc_banner);
 	printk(KERN_INFO "kwriter linux_proc_banner %s\n", kw_linux_proc_banner);
+}
+
+static void poke_addresses(unsigned long start, unsigned long end)
+{
+	unsigned long s = PFN_ALIGN(start);
+	unsigned long e = PFN_ALIGN(end);
+	volatile unsigned long va, target, *p;
+	for(va = s; va < e; va += psize) {
+		set_mem_rw(va);
+		check_va(va);
+		p = (unsigned long *) va;
+		target = *p;
+		*p = target;
+	}
 }
 
 static int __init kwriter_module_init(void)
@@ -212,7 +210,8 @@ static int __init kwriter_module_init(void)
 	native_write_cr4(cr4);
 	printk("kwriter: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
 	get_targets();
-	update_banner();
+//	update_banner();
+	poke_addresses(kw__start_rodata, kw__start_rodata + (psize * 3) /*kw__end_rodata*/);
 	printk(KERN_INFO "kwriter done __init\n");
 	return 0;
 }

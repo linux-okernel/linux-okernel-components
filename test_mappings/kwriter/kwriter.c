@@ -33,11 +33,10 @@ if not, write to:
  * Attempt to write kernel memory to demonstrate okernel protection
  */
 void oktargets(unsigned long (*address)[]);
-void okcheck_va(unsigned long va);
-void okset_mem_rw(unsigned long va);
 #define BUFFMAX 1000
 #define PG_BIT 20
 
+static size_t len_banner;
 static unsigned long mod_start = (unsigned long)PFN_ALIGN(MODULES_VADDR);
 static unsigned long mod_end = (unsigned long)PFN_ALIGN(MODULES_END);
 static unsigned long targets[10];
@@ -53,9 +52,10 @@ struct mutex *kw_text_mutex;
 static char *kw_linux_proc_banner;
 static char old_banner[BUFFMAX];
 
-static const char *patched_banner = "Successfully patched linux_proc_banner";
+static const char *patched_banner = "Successfully patched linux_proc_banner\n";
 static const unsigned long pgmask = ~(((unsigned long)1 << PG_BIT) - 1);
 static const unsigned long psize = ((unsigned long)1 << PG_BIT);
+
 static void __init get_targets(void)
 {
 	printk("kwriter pgmask %#lx\n", pgmask);
@@ -88,6 +88,54 @@ static void __init get_targets(void)
 	printk(KERN_INFO "kwriter flush_tlb_kernel_range %#lx\n",
 	       (unsigned long) kw_flush_tlb_kernel_range);
 }
+
+static void check_va(unsigned long va)
+{
+	pte_t *kpte;
+	unsigned int level;
+	pgprot_t prot;
+
+	printk(KERN_INFO "oktest checking guest physical pg perms for va %#lx",
+	       va);
+	kpte = lookup_address(va, &level);
+	if (!kpte){
+		printk(KERN_CONT "address not found in guest page tables\n");
+		return;
+	}
+	prot = pte_pgprot(*kpte);
+	if (pgprot_val(prot) & pgprot_val(__pgprot(_PAGE_NX)))
+		printk(KERN_CONT " NX is set");
+	if (pgprot_val(prot) & pgprot_val(__pgprot(_PAGE_RW)))
+		printk(KERN_CONT " RW is set");
+}
+
+static void set_mem_rw(unsigned long va)
+{	pte_t *kpte, old_pte, new_pte;
+	unsigned int level;
+	pgprot_t new_prot;
+	unsigned long pfn;
+
+	kpte = lookup_address(va, &level);
+	if (level != PG_LEVEL_4K) {
+		printk(KERN_INFO "kwriter set_mem_rw va %#lx not 4k page\n", va);
+	}
+	if (!kpte){
+		printk(KERN_INFO "kwriter set_mem_rw kpte null va %#lx\n", va);
+		return;
+	}
+	old_pte = *kpte;
+	if (pte_none(old_pte)) {
+		printk(KERN_INFO "kwriter set_mem_rw va %#lx not mapped?\n", va);
+		return;
+	}
+	pfn = pte_pfn(old_pte);
+	new_prot = pte_pgprot(old_pte);
+	pgprot_val(new_prot) |= pgprot_val(__pgprot(_PAGE_RW));
+	new_pte = pfn_pte(pfn, new_prot);
+	set_pte_atomic(kpte, new_pte);
+	return;
+}
+
  static void old_update_banner(void)
  {
  	size_t n;
@@ -109,7 +157,6 @@ end:
 
 static void update_banner(void)
 {
-	size_t n;
 	unsigned long va = ((unsigned long)kw_linux_proc_banner) & pgmask;
 	printk(KERN_INFO "kwriter attempting to set page rw %#lx\n", va);
 	if (kw_set_memory_rw(va, 1)) {
@@ -123,55 +170,67 @@ static void update_banner(void)
 		printk(KERN_INFO "kwriter failed to save banner\n");
 		return;
 	}
-	okcheck_va((unsigned long)kw_linux_proc_banner);
-	okcheck_va(va);
+	check_va((unsigned long)kw_linux_proc_banner);
+	check_va(va);
 	/* Check that we can still read kw_linux_proc_banner get the
 	 * protections from the page table and check they are what we
 	 * expect them to be. Insert memory barriers?
 	 */
-	printk(KERN_INFO "Calling okset_mem_rw");
-	okset_mem_rw(va);
-	okcheck_va(va);
+	//printk(KERN_INFO "Calling okset_mem_rw");
+	//okset_mem_rw(va);
+	printk(KERN_INFO "Calling set_mem_rw");
+	set_mem_rw(va);
+
+	check_va(va);
 	kw_flush_tlb_all();
 	kw_flush_tlb_kernel_range(va, va + psize);
 	printk(KERN_INFO "kwriter flushed tlb and page\n");
 	printk(KERN_INFO "Checking we can still read linux_proc_banner %s\n",
 	       kw_linux_proc_banner);
-	n = strlen(kw_linux_proc_banner + 1);
-	printk(KERN_INFO "kwriter patching linux_proc_banner len is %ld bytes\n", n);
-	if (n > strlen(patched_banner))
-		n = strlen(patched_banner) + 1;
-	printk(KERN_INFO "kwriter patching linux_proc_banner with %ld bytes\n", n);
-	if (!(strncpy(kw_linux_proc_banner, patched_banner, n))) {
+	len_banner = strlen(kw_linux_proc_banner) + 1;
+	printk(KERN_INFO "kwriter patching linux_proc_banner len is %ld bytes\n",
+		len_banner);
+	if (len_banner > BUFFMAX)
+		len_banner = BUFFMAX;
+	if (!(strncpy(kw_linux_proc_banner, patched_banner, len_banner))) {
  		printk(KERN_INFO "kwriter patching banner failed\n");
 		return;
 	}
-	okcheck_va((unsigned long)kw_linux_proc_banner);
+	check_va((unsigned long)kw_linux_proc_banner);
 	printk(KERN_INFO "kwriter linux_proc_banner %s\n", kw_linux_proc_banner);
 }
 
 static int __init kwriter_module_init(void)
 {
-    unsigned long cr4;
+	unsigned long cr4;
 
-    printk ("kwriter: loading module...\n");
-    printk("kwriter: trying to disable SMEP\n");
-    cr4 = native_read_cr4();
-    printk("kwriter: CR4 is currently set to %#lx\n", cr4);
-    cr4 = cr4 & ~X86_CR4_SMEP;
-    native_write_cr4(cr4);
-    printk("kwriter: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
-    get_targets();
-    update_banner();
-    printk(KERN_INFO "kwriter done __init\n");
-    return 0;
+	printk ("kwriter: loading module...\n");
+	printk("kwriter: trying to disable SMEP\n");
+	cr4 = native_read_cr4();
+	printk("kwriter: CR4 is currently set to %#lx\n", cr4);
+	cr4 = cr4 & ~X86_CR4_SMEP;
+	native_write_cr4(cr4);
+	printk("kwriter: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
+	get_targets();
+	update_banner();
+	printk(KERN_INFO "kwriter done __init\n");
+	return 0;
 }
 
 static void __exit kwriter_module_exit(void)
 {
-    printk("kwriter: unloading");
-    printk("kwriter: done.\n");
-    return;
+	unsigned long va = (unsigned long)kw_linux_proc_banner;
+
+	printk("kwriter: unloading");
+	printk(KERN_INFO "Calling set_mem_rw");
+	set_mem_rw(va);
+	check_va(va);
+	if (!(strncpy(kw_linux_proc_banner, old_banner, len_banner))) {
+		printk(KERN_INFO "kwriter failed to save banner\n");
+		return;
+	}
+	printk("kwriter: done.\n");
+	return;
 }
 
 module_init(kwriter_module_init);

@@ -116,11 +116,15 @@ static void set_mem_rw(unsigned long va)
 	unsigned long pfn;
 
 	kpte = lookup_address(va, &level);
-	if (level != PG_LEVEL_4K) {
-		printk(KERN_INFO "kwriter set_mem_rw va %#lx not 4k page\n", va);
+	printk(KERN_INFO "kwriter set_mem_rw va %#lx ", va);
+	if (level == PG_LEVEL_4K) {
+		printk(KERN_CONT "4k page\n");
+	}
+	if (level == PG_LEVEL_2M) {
+		printk(KERN_CONT "2M page\n");
 	}
 	if (!kpte){
-		printk(KERN_INFO "kwriter set_mem_rw kpte null va %#lx\n", va);
+		printk(KERN_CONT "kpte null\n");
 		return;
 	}
 	old_pte = *kpte;
@@ -210,8 +214,12 @@ static int __init kwriter_module_init(void)
 	native_write_cr4(cr4);
 	printk("kwriter: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
 	get_targets();
-//	update_banner();
-	poke_addresses(kw__start_rodata, kw__start_rodata + (psize * 3) /*kw__end_rodata*/);
+	update_banner();
+	poke_addresses(kw__start_rodata, kw__start_rodata + (psize * 3));
+	poke_addresses(kw__end_rodata - (psize * 3), kw__end_rodata);
+	poke_addresses(kw_text, kw_text + (psize * 3));
+	poke_addresses(kw_etext - (psize * 3), kw_etext);
+	
 	printk(KERN_INFO "kwriter done __init\n");
 	return 0;
 }

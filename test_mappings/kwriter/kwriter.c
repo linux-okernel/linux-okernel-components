@@ -37,6 +37,7 @@ void oktargets(unsigned long (*address)[]);
 #define BUFFMAX 1000
 #define PG_BIT 20
 #define RETQ_SLED (unsigned long) 0xc3c3c3c3c3c3c3c3
+#define USE_TEXT_POKE
 
 static size_t len_banner;
 static unsigned long mod_start = (unsigned long)PFN_ALIGN(MODULES_VADDR);
@@ -151,26 +152,6 @@ static void set_mem_rw(unsigned long va)
 
 	return;
 }
-/*
- static void old_update_banner(void)
- {
- 	size_t n;
-	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
-	if (!mutex_trylock(kw_text_mutex)) {
-		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
- 	}
-	printk(KERN_INFO "kwriter Got text_mutex\n");
- 	if (!(strncpy(old_banner, kw_linux_proc_banner, BUFFMAX))) {
-		printk(KERN_INFO "kwriter strncpy failed\n");
-		goto end;
- 	}
- 	printk(KERN_INFO "kwriter attempting to patch linux_proc_banner");
-	n = strlen(patched_banner);
-//	kw_text_poke((void *)kw_linux_proc_banner, (void *)patched_banner, n);
-end:
-	mutex_unlock(kw_text_mutex);
- }
-*/
 
 static void update_banner(void)
 {
@@ -211,6 +192,46 @@ static void poke_addresses(unsigned long start, unsigned long end)
 	}
 }
 
+#ifdef USE_TEXT_POKE
+ static void patch_fn(unsigned long *va)
+ {
+ 	size_t n;
+	volatile unsigned long sled[2];
+	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
+	if (!mutex_trylock(kw_text_mutex)) {
+		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
+		goto end;
+ 	}
+	printk(KERN_INFO "kwriter Got text_mutex\n");
+ 	printk(KERN_INFO "kwriter attempting to patch %#lx", (unsigned long)va);
+	n = sizeof(patched_code);
+	patched_code[0] = va[0];
+	patched_code[1] = va[1];
+	sled[0] = RETQ_SLED;
+	sled[1] = RETQ_SLED;
+	kw_text_poke((void *)va, (void *)sled, n);
+end:
+	mutex_unlock(kw_text_mutex);
+ }
+
+ static void unpatch_fn(unsigned long *va)
+ {
+ 	size_t n;
+	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
+	if (!mutex_trylock(kw_text_mutex)) {
+		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
+		goto end;
+ 	}
+	printk(KERN_INFO "kwriter Got text_mutex\n");
+ 	printk(KERN_INFO "kwriter attempting to patch %#lx", (unsigned long)va);
+	n = sizeof(patched_code);
+	kw_text_poke((void *)va, (void *)patched_code, n);
+end:
+	mutex_unlock(kw_text_mutex);
+ }
+
+#else
+
 static void print_bytes(unsigned char *p, int n)
 {
 	int i;
@@ -248,6 +269,7 @@ static void unpatch_fn(unsigned long *va)
 	printk(KERN_INFO "unpatch_fn at %#lx now has ", (unsigned long) va);
 	print_bytes((unsigned char *)va, 16);
 }
+#endif
 
 static int __init kwriter_module_init(void)
 {

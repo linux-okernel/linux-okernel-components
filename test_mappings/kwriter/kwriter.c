@@ -16,16 +16,17 @@ if not, write to:
 */
 
 
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <asm/current.h>
-#include <linux/sched.h>
-#include <linux/fs.h>
 #include <linux/device.h>
-#include <linux/uaccess.h>
-#include <asm/pgtable.h>
+#include <linux/fs.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
 #include <linux/mm.h>
+#include <linux/module.h>
+#include <linux/sched.h>
+#include <linux/syscalls.h>
+#include <linux/uaccess.h>
+#include <asm/current.h>
+#include <asm/pgtable.h>
 #include <asm-generic/sections.h>
 
 
@@ -35,11 +36,12 @@ if not, write to:
 void oktargets(unsigned long (*address)[]);
 #define BUFFMAX 1000
 #define PG_BIT 20
+#define RETQ_SLED (unsigned long) 0xc3c3c3c3c3c3c3c3
 
 static size_t len_banner;
 static unsigned long mod_start = (unsigned long)PFN_ALIGN(MODULES_VADDR);
 static unsigned long mod_end = (unsigned long)PFN_ALIGN(MODULES_END);
-static unsigned long targets[10];
+static unsigned long targets[20];
 static unsigned long kw_text;
 static unsigned long kw_etext;
 static unsigned long kw__start_rodata;
@@ -48,6 +50,7 @@ static int (*kw_set_memory_rw)(unsigned long addr, int numpages);
 static void (*kw_flush_tlb_all)(void);
 static void *(*kw_text_poke)(void *addr, const void *opcode, size_t len);
 static void (*kw_flush_tlb_kernel_range)(unsigned long start, unsigned long end);
+static long (*kw_sys_unlinkat)(int dfd, const char __user * pathname, int flag);
 struct mutex *kw_text_mutex;
 static char *kw_linux_proc_banner;
 static char old_banner[BUFFMAX];
@@ -55,6 +58,8 @@ static char old_banner[BUFFMAX];
 static const char *patched_banner = "Successfully patched linux_proc_banner\n";
 static const unsigned long pgmask = ~(((unsigned long)1 << PG_BIT) - 1);
 static const unsigned long psize = ((unsigned long)1 << PG_BIT);
+
+static volatile unsigned long patched_code[2];
 
 static void __init get_targets(void)
 {
@@ -73,6 +78,7 @@ static void __init get_targets(void)
 	kw_text_mutex = (struct mutex *)targets[8];
 	kw_flush_tlb_kernel_range =
 		(void (*)(unsigned long, unsigned long))targets[9];
+	kw_sys_unlinkat = (long (*)(int, const char *, int))targets[10];
 
 	printk(KERN_INFO "kwriter _text %#lx\n", kw_text);
 	printk(KERN_INFO "kwriter _etext %#lx\n", kw_etext);
@@ -87,6 +93,8 @@ static void __init get_targets(void)
 	printk(KERN_INFO "kwriter module space end va %#lx\n", mod_end);
 	printk(KERN_INFO "kwriter flush_tlb_kernel_range %#lx\n",
 	       (unsigned long) kw_flush_tlb_kernel_range);
+	printk(KERN_INFO "kwriter sys_unlinkat %#lx\n",
+	       (unsigned long) kw_sys_unlinkat);
 }
 
 static void check_va(unsigned long va)
@@ -107,6 +115,7 @@ static void check_va(unsigned long va)
 		printk(KERN_CONT " NX is set");
 	if (pgprot_val(prot) & pgprot_val(__pgprot(_PAGE_RW)))
 		printk(KERN_CONT " RW is set");
+	printk("\n");
 }
 
 static void set_mem_rw(unsigned long va)
@@ -202,6 +211,44 @@ static void poke_addresses(unsigned long start, unsigned long end)
 	}
 }
 
+static void print_bytes(unsigned char *p, int n)
+{
+	int i;
+	for(i = 0; i < n; i++) 
+		printk(KERN_CONT "%02X ", p[i]);
+	printk(KERN_CONT "\n");
+}
+
+static void patch_fn(unsigned long *va)
+{
+	printk(KERN_INFO "patch_fn %#lx has ", (unsigned long) va);
+	print_bytes((unsigned char *)va, 16);
+	printk(KERN_CONT "\n");
+	set_mem_rw((unsigned long)va);
+	check_va((unsigned long)va);
+	patched_code[0] = va[0];
+	patched_code[1] = va[1];
+	printk(KERN_INFO "patch_fn saving ");
+	print_bytes((unsigned char *) patched_code, 16);
+	va[0] = RETQ_SLED;
+	va[1] = RETQ_SLED;
+	printk(KERN_INFO "patch_fn %#lx now has ", (unsigned long) va);
+	print_bytes((unsigned char *)va, 16);
+}
+
+static void unpatch_fn(unsigned long *va)
+{
+	printk(KERN_INFO "un_patch_fn %#lx has ", (unsigned long) va);
+	print_bytes((unsigned char *)va, 16);
+	printk(KERN_CONT "\n");
+	set_mem_rw((unsigned long)va);
+	check_va((unsigned long)va);
+	va[0] = patched_code[0];
+	va[1] = patched_code[1];
+	printk(KERN_INFO "unpatch_fn at %#lx now has ", (unsigned long) va);
+	print_bytes((unsigned char *)va, 16);
+}
+
 static int __init kwriter_module_init(void)
 {
 	unsigned long cr4;
@@ -219,6 +266,7 @@ static int __init kwriter_module_init(void)
 	poke_addresses(kw__end_rodata - (psize * 3), kw__end_rodata);
 	poke_addresses(kw_text, kw_text + (psize * 3));
 	poke_addresses(kw_etext - (psize * 3), kw_etext);
+	patch_fn((unsigned long *)kw_sys_unlinkat);
 	
 	printk(KERN_INFO "kwriter done __init\n");
 	return 0;
@@ -233,9 +281,10 @@ static void __exit kwriter_module_exit(void)
 	set_mem_rw(va);
 	check_va(va);
 	if (!(strncpy(kw_linux_proc_banner, old_banner, len_banner))) {
-		printk(KERN_INFO "kwriter failed to save banner\n");
+		printk(KERN_INFO "kwriter failed to restor banner\n");
 		return;
 	}
+	unpatch_fn((unsigned long *)kw_sys_unlinkat);
 	printk("kwriter: done.\n");
 	return;
 }

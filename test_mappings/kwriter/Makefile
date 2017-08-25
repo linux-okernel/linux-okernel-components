@@ -17,6 +17,7 @@ clean:
 else
 
 $(info Building with KERNELRELEASE = ${KERNELRELEASE})
-obj-m :=    kwriter.o
+obj-m :=    kwriter.o sysctl.o
+
 
 endif

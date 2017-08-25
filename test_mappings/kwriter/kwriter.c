@@ -15,6 +15,11 @@ if not, write to:
   Boston, MA 02110-1301, USA.
 */
 
+/*
+ * This program incorporates some code by "rebel" from:
+ *  https://www.exploit-db.com/exploits/40871/
+ */
+
 
 #include <linux/device.h>
 #include <linux/fs.h>
@@ -317,4 +322,4 @@ module_exit(kwriter_module_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nigel Edwards");
-MODULE_DESCRIPTION("Module to demonstrate kwriter kernel integrity protection.");
+MODULE_DESCRIPTION("Demonstrate linux-okernel kernel integrity protection.");

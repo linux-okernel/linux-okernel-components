@@ -1,0 +1,11 @@
+default: vsysupdate
+
+vsysupdate.o: vsysupdate.c
+	gcc -c vsysupdate.c -o vsysupdate.o
+
+vsysupdate: vsysupdate.o
+	gcc vsysupdate.o -lpthread -o vsysupdate
+
+clean:
+	rm -f vsysupdate.o
+	rm -f vsysupdate

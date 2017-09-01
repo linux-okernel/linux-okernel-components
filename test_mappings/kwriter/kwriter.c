@@ -42,6 +42,8 @@ void oktargets(unsigned long (*address)[]);
 #define BUFFMAX 1000
 #define PG_BIT 20
 #define RETQ_SLED (unsigned long) 0xc3c3c3c3c3c3c3c3
+#define MN "kwriter "
+
 #define USE_TEXT_POKE
 
 static size_t len_banner;
@@ -69,10 +71,10 @@ static volatile unsigned long patched_code[2];
 
 static void __init get_targets(void)
 {
-	printk("kwriter pgmask %#lx\n", pgmask);
-	printk("kwriter invoking oktargets %#lx\n", (unsigned long) oktargets);
+	printk(MN "pgmask %#lx\n", pgmask);
+	printk(MN "invoking oktargets %#lx\n", (unsigned long) oktargets);
 	oktargets(&targets);
-	printk("kwriter returned from oktargets\n");
+	printk(MN "returned from oktargets\n");
 	kw_text = targets[0];
 	kw_etext = targets[1];
 	kw__start_rodata = targets[2];
@@ -86,20 +88,20 @@ static void __init get_targets(void)
 		(void (*)(unsigned long, unsigned long))targets[9];
 	kw_sys_unlinkat = (long (*)(int, const char *, int))targets[10];
 
-	printk(KERN_INFO "kwriter _text %#lx\n", kw_text);
-	printk(KERN_INFO "kwriter _etext %#lx\n", kw_etext);
-	printk(KERN_INFO "kwriter __start_rodata va %#lx\n", kw__start_rodata);
-	printk(KERN_INFO "kwriter __end_rodata va %#lx\n", kw__end_rodata);
-	printk(KERN_INFO "kwriter set_memory_rw %#lx\n",
+	printk(KERN_INFO MN "_text %#lx\n", kw_text);
+	printk(KERN_INFO MN "_etext %#lx\n", kw_etext);
+	printk(KERN_INFO MN "__start_rodata va %#lx\n", kw__start_rodata);
+	printk(KERN_INFO MN "__end_rodata va %#lx\n", kw__end_rodata);
+	printk(KERN_INFO MN "set_memory_rw %#lx\n",
 	       (unsigned long) kw_set_memory_rw);
-	printk(KERN_INFO "kwriter linux_proc_banner %s\n", kw_linux_proc_banner);
-	printk(KERN_INFO "kwriter linux_proc_banner va %#lx\n",
+	printk(KERN_INFO MN "linux_proc_banner %s\n", kw_linux_proc_banner);
+	printk(KERN_INFO MN "linux_proc_banner va %#lx\n",
 	       (unsigned long) kw_linux_proc_banner);
-	printk(KERN_INFO "kwriter module space start va %#lx\n", mod_start);
-	printk(KERN_INFO "kwriter module space end va %#lx\n", mod_end);
-	printk(KERN_INFO "kwriter flush_tlb_kernel_range %#lx\n",
+	printk(KERN_INFO MN "module space start va %#lx\n", mod_start);
+	printk(KERN_INFO MN "module space end va %#lx\n", mod_end);
+	printk(KERN_INFO MN "flush_tlb_kernel_range %#lx\n",
 	       (unsigned long) kw_flush_tlb_kernel_range);
-	printk(KERN_INFO "kwriter sys_unlinkat %#lx\n",
+	printk(KERN_INFO MN "sys_unlinkat %#lx\n",
 	       (unsigned long) kw_sys_unlinkat);
 }
 
@@ -109,7 +111,7 @@ static void check_va(unsigned long va)
 	unsigned int level;
 	pgprot_t prot;
 
-	printk(KERN_INFO "oktest checking guest physical pg perms for va %#lx",
+	printk(KERN_INFO MN "checking guest physical pg perms for va %#lx",
 	       va);
 	kpte = lookup_address(va, &level);
 	if (!kpte){
@@ -131,7 +133,7 @@ static void set_mem_rw(unsigned long va)
 	unsigned long pfn;
 
 	kpte = lookup_address(va, &level);
-	printk(KERN_INFO "kwriter set_mem_rw va %#lx ", va);
+	printk(KERN_INFO MN "set_mem_rw va %#lx ", va);
 	if (level == PG_LEVEL_4K) {
 		printk(KERN_CONT "4k page\n");
 	}
@@ -144,7 +146,7 @@ static void set_mem_rw(unsigned long va)
 	}
 	old_pte = *kpte;
 	if (pte_none(old_pte)) {
-		printk(KERN_INFO "kwriter set_mem_rw va %#lx not mapped?\n", va);
+		printk(KERN_INFO MN "set_mem_rw va %#lx not mapped?\n", va);
 		return;
 	}
 	pfn = pte_pfn(old_pte);
@@ -163,7 +165,7 @@ static void update_banner(void)
 	unsigned long va = ((unsigned long)kw_linux_proc_banner) & pgmask;
 
 	if (!(strncpy(old_banner, kw_linux_proc_banner, BUFFMAX))) {
-		printk(KERN_INFO "kwriter failed to save banner\n");
+		printk(KERN_INFO MN "failed to save banner\n");
 		return;
 	}
 	printk(KERN_INFO "Calling set_mem_rw");
@@ -172,15 +174,15 @@ static void update_banner(void)
 	printk(KERN_INFO "Checking we can still read linux_proc_banner %s\n",
 	       kw_linux_proc_banner);
 	len_banner = strlen(kw_linux_proc_banner) + 1;
-	printk(KERN_INFO "kwriter patching linux_proc_banner len is %ld bytes\n",
+	printk(KERN_INFO MN "patching linux_proc_banner len is %ld bytes\n",
 		len_banner);
 	if (len_banner > BUFFMAX)
 		len_banner = BUFFMAX;
 	if (!(strncpy(kw_linux_proc_banner, patched_banner, len_banner))) {
- 		printk(KERN_INFO "kwriter patching banner failed\n");
+ 		printk(KERN_INFO MN "patching banner failed\n");
 		return;
 	}
-	printk(KERN_INFO "kwriter linux_proc_banner %s\n", kw_linux_proc_banner);
+	printk(KERN_INFO MN "linux_proc_banner %s\n", kw_linux_proc_banner);
 }
 
 static void poke_addresses(unsigned long start, unsigned long end)
@@ -188,6 +190,7 @@ static void poke_addresses(unsigned long start, unsigned long end)
 	unsigned long s = PFN_ALIGN(start);
 	unsigned long e = PFN_ALIGN(end);
 	volatile unsigned long va, target, *p;
+	printk(KERN_INFO MN "Commencing poking of address space...\n");
 	for(va = s; va < e; va += psize) {
 		set_mem_rw(va);
 		check_va(va);
@@ -195,6 +198,7 @@ static void poke_addresses(unsigned long start, unsigned long end)
 		target = *p;
 		*p = target;
 	}
+	printk(KERN_INFO MN "Done poking of address space\n");
 }
 
 #ifdef USE_TEXT_POKE
@@ -202,13 +206,13 @@ static void poke_addresses(unsigned long start, unsigned long end)
  {
  	size_t n;
 	volatile unsigned long sled[2];
-	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
+	printk(KERN_INFO MN "attempting to get text_mutex\n");
 	if (!mutex_trylock(kw_text_mutex)) {
-		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
+		printk(KERN_INFO MN "Unable to get text_mutex\n");
 		goto end;
  	}
-	printk(KERN_INFO "kwriter Got text_mutex\n");
- 	printk(KERN_INFO "kwriter attempting to patch %#lx", (unsigned long)va);
+	printk(KERN_INFO MN "Got text_mutex\n");
+ 	printk(KERN_INFO MN "attempting to patch %#lx", (unsigned long)va);
 	n = sizeof(patched_code);
 	patched_code[0] = va[0];
 	patched_code[1] = va[1];
@@ -222,13 +226,13 @@ end:
  static void unpatch_fn(unsigned long *va)
  {
  	size_t n;
-	printk(KERN_INFO "kwriter attempting to get text_mutex\n");
+	printk(KERN_INFO MN "attempting to get text_mutex\n");
 	if (!mutex_trylock(kw_text_mutex)) {
-		printk(KERN_INFO "kwriter Unable to get text_mutex\n");
+		printk(KERN_INFO MN "Unable to get text_mutex\n");
 		goto end;
  	}
-	printk(KERN_INFO "kwriter Got text_mutex\n");
- 	printk(KERN_INFO "kwriter attempting to patch %#lx", (unsigned long)va);
+	printk(KERN_INFO MN "Got text_mutex\n");
+ 	printk(KERN_INFO MN "attempting to patch %#lx", (unsigned long)va);
 	n = sizeof(patched_code);
 	kw_text_poke((void *)va, (void *)patched_code, n);
 end:
@@ -278,15 +282,7 @@ static void unpatch_fn(unsigned long *va)
 
 static int __init kwriter_module_init(void)
 {
-	unsigned long cr4;
-
 	printk ("kwriter: loading module...\n");
-	printk("kwriter: trying to disable SMEP\n");
-	cr4 = native_read_cr4();
-	printk("kwriter: CR4 is currently set to %#lx\n", cr4);
-	cr4 = cr4 & ~X86_CR4_SMEP;
-	native_write_cr4(cr4);
-	printk("kwriter: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
 	get_targets();
 	update_banner();
 	poke_addresses(kw__start_rodata, kw__start_rodata + (psize * 3));
@@ -295,7 +291,7 @@ static int __init kwriter_module_init(void)
 	poke_addresses(kw_etext - (psize * 3), kw_etext);
 	patch_fn((unsigned long *)kw_sys_unlinkat);
 	
-	printk(KERN_INFO "kwriter done __init\n");
+	printk(KERN_INFO MN "done __init\n");
 	return 0;
 }
 
@@ -308,7 +304,7 @@ static void __exit kwriter_module_exit(void)
 	set_mem_rw(va);
 	check_va(va);
 	if (!(strncpy(kw_linux_proc_banner, old_banner, len_banner))) {
-		printk(KERN_INFO "kwriter failed to restor banner\n");
+		printk(KERN_INFO MN "failed to restor banner\n");
 		return;
 	}
 	unpatch_fn((unsigned long *)kw_sys_unlinkat);

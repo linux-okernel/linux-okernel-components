@@ -1,11 +1,15 @@
 # Test programs to test linux-okernel protection of vsys region
 
 The vsys region is sometimes targeted as a way of bypassing SMEP/SMAP.
-It is mapped into userspace processes. If an attacker can make it writable,
-they can inject code or data into the kernel. This was used in the Proof of
-Concept for CVE-2016-8655 published by rebel. They used it to register
-a new systemctl which they used in turn to gain a root shell. We are grateful
-to rebel for sharing their work.
+It is mapped into userspace processes. If an attacker can make it
+writable, they can inject code or data into the kernel. This was used
+in the Proof of Concept for CVE-2016-8655 published by rebel. This bug
+allowed an attacker to invoke and arbitrary function in the
+kernel. Rebel's POC used it twice.  Once to invoke set_memory_rw() to
+set the vsys areas to RW. It then writes a new systemctl into the vys
+area, before using the bug again to invoke register_sysctl_table() to
+register the new sysctl. The new systemctl is then used to gain a root
+shell. We are grateful to rebel for sharing their work.
 
 For this test to work you will need to compile your kernel with the following options.
 

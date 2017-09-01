@@ -4,7 +4,7 @@ Kernel bugs allowing function pointers to be overwritten are somtimes
 used to target native_cr4_write to bypase SMEP/SMAP. This is
 demonstrated by Andrey Konovalov in his proof-of-concept local root
 exploit for CVE-2017-7308. This is the inspiration behind this test
-case.
+case, we are grateful to Andrey for publishing his work.
 
 Since the latest kernels patched, we need to simulate the bug and exploit.
 
@@ -25,8 +25,10 @@ To run:
 
 All this kernel module does is initialize the ioctl device
 
-`./bpass`
+`./bypass <address of commit_creds> <address of prepare_kernel_cred>`
 
+The script params.sh (needs to be run as root) can get the necessary
+addresses, or you can get them manually from /proc/kallsyms
 
 
 Look at the messages in the debug buffer (dmesg) and the linux-okernel
@@ -36,7 +38,7 @@ An example of the output in normal mode is shown below:
 ```
 nje@cos-04:~/linux-okernel-components/test_mappings/smepsmap$ id
 uid=1000(nje) gid=1000(nje) groups=1000(nje),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),115(lpadmin),116(sambashare),129(docker)
-nje@cos-04:~/linux-okernel-components/test_mappings/smepsmap$ ./bypass 
+nje@cos-04:~/linux-okernel-components/test_mappings/smepsmap$ ./bypass $(sudo ./params.sh)
 Count is 0
 Calling OKTEST_EXEC to bypass SMEP/SMAP with func1
 Count is 1

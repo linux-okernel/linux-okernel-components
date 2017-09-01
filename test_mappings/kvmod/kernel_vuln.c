@@ -86,20 +86,12 @@ static struct file_operations fops={
 
 static int __init kernel_vuln_module_init(void)
 {
-    unsigned long cr4;
-    
     printk ("KV: Loading kernel vuln demo module...\n");
     major_no = register_chrdev(0, VULN_DEVICE_NAME, &fops);
     printk("KV: Creating Device Major_no : %d\n", major_no);
     my_class = class_create(THIS_MODULE, VULN_DEVICE_NAME);
     device_create(my_class, NULL, MKDEV(major_no,0), NULL, VULN_DEVICE_NAME);
     printk("KV: Device <%s> Initialized in kernel.\n", VULN_DEVICE_NAME);
-    printk("KV: Trying to disable SMEP\n");
-    cr4 = native_read_cr4();
-    printk("KV: CR4 is currently set to %#lx\n", cr4);
-    cr4 = cr4 & ~X86_CR4_SMEP;
-    native_write_cr4(cr4);
-    printk("KV: Finished attempt to disable SMEP by writing %#lx to CR4\n", cr4);
     return 0;
 }
 

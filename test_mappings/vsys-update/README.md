@@ -33,7 +33,15 @@ To run:
 
 `sudo insmod regsysctl.ko`
 
+Note that vsysupdate takes a few seconds to run.
+
 Look at the messages in the debug buffer (dmesg) and the linux-okernel
 logs to see what is going on.
+
+Note that regsysctl.ko doesn't register the sysctl, as this seems to cause
+an unhandled page fault in new kernels. Because of this, I only use dummy
+addresses for modprobe_path, and proc_dostring in vsysupdate. If we could
+successfully register the sysctl, then the code would need to be
+updated to use the correct addresses.
 
 nigel.edwards@hpe.com

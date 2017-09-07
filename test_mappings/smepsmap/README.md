@@ -28,7 +28,7 @@ All this kernel module does is initialize the ioctl device
 For the IOCTL to be accessible to users other than root, you need
 to make it non-root accessible. Do the following as root:
 ```
-root@cos-04:~# udevadm info -a -p /sys/class/oktest/oktest
+$ udevadm info -a -p /sys/class/oktest/oktest
 ```
 The output will look like:
 ```
@@ -45,13 +45,13 @@ and the attributes from one single parent device.
 ```
 Create the file /etc/udev/rules.d/99-oktest.rules or similar as shown below
 ```
-root@cos-04:~# cd /etc/udev/rules.d/
-root@cos-04:~# vi 99-oktest.rules
-root@cos-04:/etc/udev/rules.d# cat 99-oktest.rules 
-# Rule for oktest
+$ cd /etc/udev/rules.d/
+$ vi 99-oktest.rules
+$ cat 99-oktest.rules 
+$ Rule for oktest
 KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
 
-root@cos-04:/etc/udev/rules.d# 
+$ 
 ```
 
 Now run bypass to get a root shell simulating the exploit
@@ -67,9 +67,9 @@ logs to see what is going on.
 
 An example of the output in normal mode is shown below:
 ```
-nje@cos-04:~/linux-okernel-components/test_mappings/smepsmap$ id
+$ id
 uid=1000(nje) gid=1000(nje) groups=1000(nje),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),115(lpadmin),116(sambashare),129(docker)
-nje@cos-04:~/linux-okernel-components/test_mappings/smepsmap$ ./bypass $(sudo ./params.sh)
+$ ./bypass $(sudo ./params.sh)
 Count is 0
 Calling OKTEST_EXEC to bypass SMEP/SMAP with func1
 Count is 1
@@ -77,8 +77,8 @@ Calling OKTEST_EXEC to bypass SMEP/SMAP with get_root_payload
 OKTEST_EXEC done
 [.] checking if we got root
 [+] got r00t ^_^
-root@cos-04:/home/nje/linux-okernel-components/test_mappings/smepsmap# id
+$ id
 uid=0(root) gid=0(root) groups=0(root)
-root@cos-04:/home/nje/linux-okernel-components/test_mappings/smepsmap# 
+$ 
 ```
 nigel.edwards@hpe.com

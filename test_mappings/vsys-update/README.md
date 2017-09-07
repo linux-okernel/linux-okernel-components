@@ -42,6 +42,14 @@ Note that regsysctl.ko doesn't register the sysctl, as this seems to cause
 an unhandled page fault in new kernels. Because of this, I only use dummy
 addresses for modprobe_path, and proc_dostring in vsysupdate. If we could
 successfully register the sysctl, then the code would need to be
-updated to use the correct addresses.
+updated to use the correct addresses. You should see something like:
+```
+[ 5300.938518] reg_sys_ctl invoking oktargets 0xffffffffab0745c0
+[ 5300.938526] reg_sys_ctl returned from oktargets
+[ 5300.938530] reg_sys_ctl Attempting to read VSYSCALL page
+[ 5300.938534] reg_sys_ctl Found at (VSYSCALL+0xf00): hack
+[ 5300.938538] reg_sys_ctl done __init
+```
+Look in the okernel logs to see what okernel is detecting.
 
 nigel.edwards@hpe.com

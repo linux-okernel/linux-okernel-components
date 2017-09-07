@@ -92,6 +92,6 @@ $
 In okernel mode "bypass" is killed on the first SMEP bypass attempt
 after printing
 
-`Calling OKTEST_EXEC to bypass SMEP/SMAP with func1`
+`Calling OKTEST_EXEC to bypass SMEP with func1`
 
 nigel.edwards@hpe.com

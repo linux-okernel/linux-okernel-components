@@ -1,4 +1,4 @@
-# Test programs to test linux-okernel protection of SMEP/SMAP
+# Test programs to test linux-okernel protection of SMEP
 
 Kernel bugs allowing function pointers to be overwritten are somtimes
 used to target native_cr4_write to bypase SMEP/SMAP. This is
@@ -54,6 +54,12 @@ KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
 $ 
 ```
 
+Remove and reinsert the module so it is available to non-root users:
+```
+sudo rmmod cr4writer.ko
+sudo insmod cr4writer.ko
+```
+
 Now run bypass as a normal user (i.e. non-root) to get a root shell
 simulating the exploit
 
@@ -72,9 +78,9 @@ $ id
 uid=1000(nje) gid=1000(nje) groups=1000(nje),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),115(lpadmin),116(sambashare),129(docker)
 $ ./bypass $(sudo ./params.sh)
 Count is 0
-Calling OKTEST_EXEC to bypass SMEP/SMAP with func1
+Calling OKTEST_EXEC to bypass SMEP with func1
 Count is 1
-Calling OKTEST_EXEC to bypass SMEP/SMAP with get_root_payload
+Calling OKTEST_EXEC to bypass SMEP with get_root_payload
 OKTEST_EXEC done
 [.] checking if we got root
 [+] got r00t ^_^
@@ -82,4 +88,10 @@ $ id
 uid=0(root) gid=0(root) groups=0(root)
 $ 
 ```
+
+In okernel mode "bypass" is killed on the first SMEP bypass attempt
+after printing
+
+`Calling OKTEST_EXEC to bypass SMEP/SMAP with func1`
+
 nigel.edwards@hpe.com

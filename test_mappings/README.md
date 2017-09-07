@@ -4,6 +4,13 @@ This directory contains demonstration and test code to show how
 linux-okernel protects agains kernel exploits and provides protected
 memory regions.
 
+When running these tests in okernel mode, to look at the linux okernel
+logs and see what it is detecting/blocking, do the following as root:
+```
+$ cat /sys/kernel/debug/tracing/trace > /tmp/trace.txt
+$ cat /tmp/trace.txt
+```
+
 Descriptions and instructions for running the exploit protection
 demonstration and tests are given in the subdirectory README.md files:
 * kwriter: general writing and patching of kernel code and data

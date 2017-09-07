@@ -48,7 +48,7 @@ Create the file /etc/udev/rules.d/99-oktest.rules or similar as shown below
 $ cd /etc/udev/rules.d/
 $ vi 99-oktest.rules
 $ cat 99-oktest.rules 
-$ Rule for oktest
+# Rule for oktest
 KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
 
 $ 

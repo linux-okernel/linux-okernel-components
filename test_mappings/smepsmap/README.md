@@ -54,7 +54,8 @@ KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
 $ 
 ```
 
-Now run bypass to get a root shell simulating the exploit
+Now run bypass as a normal user (i.e. non-root) to get a root shell
+simulating the exploit
 
 `./bypass <address of commit_creds> <address of prepare_kernel_cred>`
 

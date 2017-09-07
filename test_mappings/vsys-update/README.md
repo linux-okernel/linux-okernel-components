@@ -13,7 +13,7 @@ shell. We are grateful to rebel for sharing their work.
 
 For this test to work you will need to compile your kernel with the following options.
 
-CAVEAT EMPTOR: this works on a dual process Z640. On other machines I've seen the kernel hang or deadlock.
+CAVEAT EMPTOR: this works on a dual processor Z640. On other machines I've seen the kernel hang or deadlock.
 
 `CONFIG_LEGACY_VSYSCALL_NATIVE=y`
 

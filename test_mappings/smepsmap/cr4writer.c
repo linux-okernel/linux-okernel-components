@@ -46,17 +46,6 @@ void ok_test_dev_remove(void);
 
 static int __init cr4w_module_init(void)
 {
-/*
-	unsigned long cr4;
-	printk(KERN_INFO MN "updating CR4 to bypass SMAP/SMEP\n");
-	cr4 = native_read_cr4();
-	printk(MN "CR4 is currently set to %#lx\n", cr4);
-	cr4 = cr4 & ~(X86_CR4_SMEP|X86_CR4_SMAP);
-	native_write_cr4(cr4);
-	printk(MN "SMAP/SMEP disabled CR4 now %#lx\n", cr4);
-
-	printk(KERN_INFO MN "done __init\n");
-*/
 	ok_test_dev_init();
 	return 0;
 }

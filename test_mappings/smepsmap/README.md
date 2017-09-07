@@ -25,6 +25,37 @@ To run:
 
 All this kernel module does is initialize the ioctl device
 
+For the IOCTL to be accessible to users other than root, you need
+to make it non-root accessible. Do the following as root:
+```
+root@cos-04:~# udevadm info -a -p /sys/class/oktest/oktest
+```
+The output will look like:
+```
+Udevadm info starts with the device specified by the devpath and then
+walks up the chain of parent devices. It prints for every device
+found, all possible attributes in the udev rules key format.
+A rule to match, can be composed by the attributes of the device
+and the attributes from one single parent device.
+
+  looking at device '/devices/virtual/oktest/oktest':
+    KERNEL=="oktest"
+    SUBSYSTEM=="oktest"
+    DRIVER==""
+```
+Create the file /etc/udev/rules.d/99-oktest.rules or similar as shown below
+```
+root@cos-04:~# cd /etc/udev/rules.d/
+root@cos-04:~# vi 99-oktest.rules
+root@cos-04:/etc/udev/rules.d# cat 99-oktest.rules 
+# Rule for oktest
+KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
+
+root@cos-04:/etc/udev/rules.d# 
+```
+
+Now run bypass to get a root shell simulating the exploit
+
 `./bypass <address of commit_creds> <address of prepare_kernel_cred>`
 
 The script params.sh (needs to be run as root) can get the necessary

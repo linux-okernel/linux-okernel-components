@@ -57,7 +57,6 @@ static unsigned long kw__end_rodata;
 static int (*kw_set_memory_rw)(unsigned long addr, int numpages);
 static void (*kw_flush_tlb_all)(void);
 static void *(*kw_text_poke)(void *addr, const void *opcode, size_t len);
-static void (*kw_flush_tlb_kernel_range)(unsigned long start, unsigned long end);
 static long (*kw_sys_unlinkat)(int dfd, const char __user * pathname, int flag);
 struct mutex *kw_text_mutex;
 static char *kw_linux_proc_banner;
@@ -84,9 +83,7 @@ static void __init get_targets(void)
 	kw_linux_proc_banner = (char *)targets[6];
 	kw_text_poke = (void *(*)(void *, const void *, size_t))targets[7];
 	kw_text_mutex = (struct mutex *)targets[8];
-	kw_flush_tlb_kernel_range =
-		(void (*)(unsigned long, unsigned long))targets[9];
-	kw_sys_unlinkat = (long (*)(int, const char *, int))targets[10];
+	kw_sys_unlinkat = (long (*)(int, const char *, int))targets[9];
 
 	printk(KERN_INFO MN "_text %#lx\n", kw_text);
 	printk(KERN_INFO MN "_etext %#lx\n", kw_etext);
@@ -99,8 +96,6 @@ static void __init get_targets(void)
 	       (unsigned long) kw_linux_proc_banner);
 	printk(KERN_INFO MN "module space start va %#lx\n", mod_start);
 	printk(KERN_INFO MN "module space end va %#lx\n", mod_end);
-	printk(KERN_INFO MN "flush_tlb_kernel_range %#lx\n",
-	       (unsigned long) kw_flush_tlb_kernel_range);
 	printk(KERN_INFO MN "sys_unlinkat %#lx\n",
 	       (unsigned long) kw_sys_unlinkat);
 }
@@ -155,7 +150,6 @@ static void set_mem_rw(unsigned long va)
 	new_pte = pfn_pte(pfn, new_prot);
 	set_pte_atomic(kpte, new_pte);
 	kw_flush_tlb_all();
-	kw_flush_tlb_kernel_range(va, va + psize);
 
 	return;
 }

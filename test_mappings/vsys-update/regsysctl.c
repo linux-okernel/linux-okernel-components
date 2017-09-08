@@ -53,7 +53,7 @@ static void __init get_targets(void)
 	printk(MN "invoking oktargets %#lx\n", (unsigned long) oktargets);
 	oktargets(&targets);
 	printk(MN "returned from oktargets\n");
-	do_reg = (struct ctl_table_header *(*)(struct ctl_table *))targets[13];
+	do_reg = (struct ctl_table_header *(*)(struct ctl_table *))targets[10];
 }
 
 

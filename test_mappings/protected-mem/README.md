@@ -34,7 +34,7 @@ And in another:
 
 `$ ./kvc/kernel_vuln_client 0xAAAAAA (address from running the protected\_memory\_client prog)`
 
-Repeat this in another shell that is **NOT in okernel mode**
+Repeat this in another shell that is **NOT in okernel mode**.
 
 
 ## Building and running the test progs in a container

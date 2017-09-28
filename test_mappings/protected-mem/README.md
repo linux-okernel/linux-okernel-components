@@ -14,6 +14,10 @@ From the kvmod subdir:
 
 ## Building and running the test progs as stand alone binaries
 
+*The following needs to be done from a shell in "okernel" mode unless
+ stated otherwise*. See top level README.md for instructions to run a
+ shell in outer-kernel or okernel mode.
+
 From the pmc subdir:
 
 `$ make clean && make`

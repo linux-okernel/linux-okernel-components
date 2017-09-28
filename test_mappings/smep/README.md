@@ -7,11 +7,11 @@ exploit for CVE-2017-7308. This is the inspiration behind this test
 case, we are grateful to Andrey for publishing his work.
 
 Since the latest kernels patched, we need to simulate the bug and exploit.
-
 We use the IOCTL expose by oktest to simulate the effect of kernel
 function pointer control. The ioctl writes to CR4 turning off SMEP and
 SMAP and then executes the user supplied function, which because it is
-in a userspace address would be blocked by SMEP and SMAP.
+in a userspace address would be blocked by SMEP and SMAP. The module
+cr4writer is used to enable/disable this ioctl in oktest.
 
 To build:
 

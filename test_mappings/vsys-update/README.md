@@ -11,6 +11,9 @@ area, before using the bug again to invoke register_sysctl_table() to
 register the new sysctl. The new systemctl is then used to gain a root
 shell. We are grateful to rebel for sharing their work.
 
+Since we the above bug has been fixed, we simulate by inserting kernel
+modules. Linux-okernel detects/prevents the write to the vsys area.
+
 For this test to work you will need to compile your kernel with the following options.
 
 CAVEAT EMPTOR: this works on a dual processor Z640. On other machines I've seen the kernel hang or deadlock.
@@ -25,8 +28,15 @@ Then build using:
 
 `make clean -f makefile.vsys && make -f makefile.vsys`
 
-To run:
-
+To run, make sure you are in okernel mode:
+```
+$ okernel_exec2 /bin/bash
+$ cat /proc/self/okernel
+1
+$ # we are in okernel mode
+$
+```
+Then:
 `sudo insmod vsysrw.ko`
 
 `./vsysupdate`
@@ -50,6 +60,14 @@ updated to use the correct addresses. You should see something like:
 [ 5300.938534] reg_sys_ctl Found at (VSYSCALL+0xf00): hack
 [ 5300.938538] reg_sys_ctl done __init
 ```
-Look in the okernel logs to see what okernel is detecting.
+Look in the okernel logs to see what okernel is detecting:
+```
+$ sudo tail -3 /sys/kernel/debug/tracing/trace
+           <...>-5262  [003] ....  9043.217140: vmx_launch: [OK_SEC] [R, cpu(3),pid(5262)] : Physical address 0x3be5e04850 with EPT prot 0x5 alias or change for kernel protected code mapped at 0xffffffffff600850 being created for virtual address 0xffffffffff600850, new EPT prot 0x7, uid 1000, command vsysupdate
+           <...>-5261  [006] ....  9043.223448: vmx_launch: [OK_SEC] [R, cpu(6),pid(5261)] : Physical address 0x3be5e04850 with EPT prot 0x5 alias or change for kernel protected code mapped at 0xffffffffff600850 being created for virtual address 0xffffffffff600850, new EPT prot 0x7, uid 1000, command vsysupdate
+           <...>-5272  [011] ....  9062.577436: module_ept_violation: [OK_SEC] [R, cpu(11),pid(5272)] : New module code at pa 0x1f72f7c000 va 0xffffffffc00bd000
+nje@cos-05:~/linux-okernel-components/test_mappings/vsys-update$
+
+```
 
 nigel.edwards@hpe.com

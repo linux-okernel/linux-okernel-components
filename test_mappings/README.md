@@ -13,10 +13,12 @@ $ cat /tmp/trace.txt
 
 Descriptions and instructions for running the exploit protection
 demonstration and tests are given in the subdirectory README.md files:
-* exploits: The POC exploits listed above and the motivation for our tests
 * kwriter: general writing and patching of kernel code and data
 * protected-mem: demonstration of protected memory
 * smepsmap: smep bypass using a publicly known technique. Adapted from
 POC exploit for CVE-2017-7308
 * vsys-update: write to the vsys memory page. Adapted from POC exploit
 for CVE-2016-8655.
+
+In addition, not intended for testing, just for archival and study:
+* exploits: The POC exploits listed above and the motivation for our tests

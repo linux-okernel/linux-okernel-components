@@ -6,7 +6,8 @@ banner, so that /proc/version is changed. Finally it uses the linux
 kernel provided text_poke function to replace unlink_at() with a "C3" sled
 (x86_64 return instruction). This disables the "rm" instruction.
 
-When you unload the module (highly recommended!) normality is restored.
+When you unload the module (highly recommended) normality is restored.
+__**DO NOT FORGET TO UNLOAD THE MODULE, AS IT DISABLES THE rm COMMAND**__
 
 To build:
 
@@ -14,7 +15,7 @@ To build:
 
 `make clean -f makefile.bypass && make -f makefile.bpass`
 
-To run:
+To run (**make sure you are in okernel mode - see top level README file**):
 
 `sudo insmod kwriter.ko`
 

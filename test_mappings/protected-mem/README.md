@@ -6,7 +6,7 @@ Adjust the KERNELDIR variable in 'test_mappings/kvmod/Makefile' (line
 3) to reflect the path of the main split kernel repo (~/linux-okernel/
 by default).
 
-From the kvmod subdir:
+In the kvmod subdir:
 
 `$ make clean && make`
 `$ insmod ./kernel_vuln.ko`
@@ -18,11 +18,11 @@ From the kvmod subdir:
  stated otherwise**. See top level README.md for instructions to run a
  shell in outer-kernel or okernel mode.
 
-From the pmc subdir:
+In the pmc subdir:
 
 `$ make clean && make`
 
-From the kvc subdir:
+In the kvc subdir:
 
 `$ make clean && make`
 
@@ -32,7 +32,7 @@ Run in one shell:
 
 And in another:
 
-`$ ./kvc/kernel_vuln_client 0xAAAAAA (address from running the protected\_memory\_client prog)`
+`$ ./kvc/kernel_vuln_client 0xAAAAAA (address from running the protected_memory_client prog)`
 
 Repeat this in another shell that is **NOT in okernel mode**.
 

@@ -1,14 +1,14 @@
 /*
  Copyright [2015-2017] Hewlett Packard Enterprise Development LP
 
-This program is free software; you can redistribute it and/or modify it under the terms 
+This program is free software; you can redistribute it and/or modify it under the terms
 of version 2 of the GNU General Public License as published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program; 
+You should have received a copy of the GNU General Public License along with this program;
 if not, write to:
   Free Software Foundation, Inc.
   51 Franklin Street, Fifth Floor
@@ -40,7 +40,8 @@ if not, write to:
  */
 void oktargets(unsigned long (*address)[]);
 #define BUFFMAX 1000
-#define PG_BIT 20
+#define PG_BIT2M 21
+#define PG_BIT4K 12
 #define RETQ_SLED (unsigned long) 0xc3c3c3c3c3c3c3c3
 #define MN "kwriter "
 
@@ -63,14 +64,15 @@ static char *kw_linux_proc_banner;
 static char old_banner[BUFFMAX];
 
 static const char *patched_banner = "Successfully patched linux_proc_banner\n";
-static const unsigned long pgmask = ~(((unsigned long)1 << PG_BIT) - 1);
-static const unsigned long psize = ((unsigned long)1 << PG_BIT);
+static const unsigned long pgmask2M = ~(((unsigned long)1 << PG_BIT2M) - 1);
+static const unsigned long p2M = ((unsigned long)1 << PG_BIT2M);
+static const unsigned long p4K = ((unsigned long)1 << PG_BIT4K);
 
 static volatile unsigned long patched_code[2];
 
 static void __init get_targets(void)
 {
-	printk(MN "pgmask %#lx\n", pgmask);
+	printk(MN "pgmask2M %#lx\n", pgmask2M);
 	printk(MN "invoking oktargets %#lx\n", (unsigned long) oktargets);
 	oktargets(&targets);
 	printk(MN "returned from oktargets\n");
@@ -96,7 +98,7 @@ static void __init get_targets(void)
 	       (unsigned long) kw_linux_proc_banner);
 	printk(KERN_INFO MN "module space start va %#lx\n", mod_start);
 	printk(KERN_INFO MN "module space end va %#lx\n", mod_end);
-	printk(KERN_INFO MN "sys_unlinkat %#lx\n",
+	printk(KERN_INFO MN "sys_unlinkat va %#lx\n",
 	       (unsigned long) kw_sys_unlinkat);
 }
 
@@ -110,7 +112,7 @@ static void check_va(unsigned long va)
 	       va);
 	kpte = lookup_address(va, &level);
 	if (!kpte){
-		printk(KERN_CONT "address not found in guest page tables\n");
+		printk(KERN_CONT "address not found in guest page tables");
 		return;
 	}
 	prot = pte_pgprot(*kpte);
@@ -118,7 +120,6 @@ static void check_va(unsigned long va)
 		printk(KERN_CONT " NX is set");
 	if (pgprot_val(prot) & pgprot_val(__pgprot(_PAGE_RW)))
 		printk(KERN_CONT " RW is set");
-	printk("\n");
 }
 
 static void set_mem_rw(unsigned long va)
@@ -156,7 +157,7 @@ static void set_mem_rw(unsigned long va)
 
 static void update_banner(void)
 {
-	unsigned long va = ((unsigned long)kw_linux_proc_banner) & pgmask;
+	unsigned long va = ((unsigned long)kw_linux_proc_banner) & pgmask2M;
 
 	if (!(strncpy(old_banner, kw_linux_proc_banner, BUFFMAX))) {
 		printk(KERN_INFO MN "failed to save banner\n");
@@ -165,7 +166,7 @@ static void update_banner(void)
 	printk(KERN_INFO "Calling set_mem_rw");
 	set_mem_rw(va);
 	check_va(va);
-	printk(KERN_INFO "Checking we can still read linux_proc_banner %s\n",
+	printk(KERN_INFO "Checking we can still read linux_proc_banner %s",
 	       kw_linux_proc_banner);
 	len_banner = strlen(kw_linux_proc_banner) + 1;
 	printk(KERN_INFO MN "patching linux_proc_banner len is %ld bytes\n",
@@ -176,21 +177,23 @@ static void update_banner(void)
  		printk(KERN_INFO MN "patching banner failed\n");
 		return;
 	}
-	printk(KERN_INFO MN "linux_proc_banner %s\n", kw_linux_proc_banner);
+	printk(KERN_INFO MN "linux_proc_banner:\"%s\"", kw_linux_proc_banner);
 }
 
-static void poke_addresses(unsigned long start, unsigned long end)
+static void poke_addresses(unsigned long start, unsigned long end,
+			   unsigned long step)
 {
 	unsigned long s = PFN_ALIGN(start);
 	unsigned long e = PFN_ALIGN(end);
 	volatile unsigned long va, target, *p;
 	printk(KERN_INFO MN "Commencing poking of address space...\n");
-	for(va = s; va < e; va += psize) {
+	for(va = s; va < e; va += step) {
 		set_mem_rw(va);
 		check_va(va);
 		p = (unsigned long *) va;
 		target = *p;
 		*p = target;
+		printk(KERN_INFO MN "written to %#lx\n", va);
 	}
 	printk(KERN_INFO MN "Done poking of address space\n");
 }
@@ -238,7 +241,7 @@ end:
 static void print_bytes(unsigned char *p, int n)
 {
 	int i;
-	for(i = 0; i < n; i++) 
+	for(i = 0; i < n; i++)
 		printk(KERN_CONT "%02X ", p[i]);
 	printk(KERN_CONT "\n");
 }
@@ -276,15 +279,17 @@ static void unpatch_fn(unsigned long *va)
 
 static int __init kwriter_module_init(void)
 {
-	printk ("kwriter: loading module...\n");
+	unsigned long lpb;
+	printk(KERN_INFO MN "loading module...\n");
 	get_targets();
+	lpb = (unsigned long) kw_linux_proc_banner;
 	update_banner();
-	poke_addresses(kw__start_rodata, kw__start_rodata + (psize * 3));
-	poke_addresses(kw__end_rodata - (psize * 3), kw__end_rodata);
-	poke_addresses(kw_text, kw_text + (psize * 3));
-	poke_addresses(kw_etext - (psize * 3), kw_etext);
+	poke_addresses(lpb + p4K, lpb + (p4K * 4), p4K);
+	poke_addresses(kw__end_rodata - (p4K * 3), kw__end_rodata, p4K);
+	poke_addresses(kw_text, kw_text + (p2M * 3), p2M);
+	poke_addresses(kw_etext - (p2M * 3), kw_etext, p2M);
 	patch_fn((unsigned long *)kw_sys_unlinkat);
-	
+
 	printk(KERN_INFO MN "done __init\n");
 	return 0;
 }
@@ -294,7 +299,7 @@ static void __exit kwriter_module_exit(void)
 	unsigned long va = (unsigned long)kw_linux_proc_banner;
 
 	printk("kwriter: unloading");
-	printk(KERN_INFO "Calling set_mem_rw");
+	printk(KERN_INFO MN "Calling set_mem_rw");
 	set_mem_rw(va);
 	check_va(va);
 	if (!(strncpy(kw_linux_proc_banner, old_banner, len_banner))) {

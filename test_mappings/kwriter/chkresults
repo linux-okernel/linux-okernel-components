@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import re
+import subprocess
+import sys
+
+def get_addresses(dmesg, tag):
+    addresses = set()
+    for l in dmesg.split("\n"):
+        if tag in l:
+            for e in l.split(" "):
+                if e.startswith("0x"):
+                    addresses.add(e)
+    return addresses
+
+def get_update(oklog):
+    addresses = set()
+    tag = "alias or change for kernel protected code mapped at "
+    for l in oklog.split("\n"):
+        if tag in l:
+            l = re.sub(r".*" + tag, "", l)
+            l = re.sub(r" being.*", "", l)
+            addresses.add(l)
+    return addresses
+
+def main():
+    addresses = set() # The addresses too which we've written
+    detected = set() # The set of addresses which okernel has detected as being written
+    problems = False
+    sys.stdout.write("Starting comparision beteen dmesg and okernel log\n")
+    p = subprocess.Popen("dmesg", stdout=subprocess.PIPE)
+    dmesg = p.communicate()[0]
+    addresses.update(get_addresses(dmesg, "kwriter written to"))
+    addresses.update(get_addresses(dmesg, "kwriter linux_proc_banner va"))
+    addresses.update(get_addresses(dmesg, "kwriter sys_unlinkat va"))
+
+    p = subprocess.Popen(["sudo", "cat", "/sys/kernel/debug/tracing/trace"], stdout=subprocess.PIPE)
+# Comment out the above and uncomment the line below for testing copy the trace and edit it to cause detections
+#    p = subprocess.Popen(["sudo", "cat", "/tmp/test.txt"], stdout=subprocess.PIPE)
+    oklog = p.communicate()[0]
+    detected.update(get_update(oklog))
+
+    undetected = addresses.difference(detected)
+    if undetected != set():
+        print "FAILED: undetected written addresses {0}".format(undetected)
+        problems = True
+    false_pos = detected.difference(addresses)
+    if false_pos != set():
+        print "WARNING: additional writes detected to addreses {0}".format(false_pos)
+        problems = True
+    if problems == False:
+        print "Success: Linux-okernel detected changes to the following addresses {0}".format(detected)
+        exit(0)
+    else:
+        print "Linux-okernel detected changes to the following addresses {0}".format(detected)
+        exit(1)
+
+if __name__ == "__main__":
+    main()

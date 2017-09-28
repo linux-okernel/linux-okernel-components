@@ -32,8 +32,6 @@ Success okernel detected changes to the following addresses set(['0xffffffff8ba0
 Sample output from the command line shown below.
 
 ```
-$ cat /proc/version
-Linux version 4.13.0+ (nje@cos-05) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4)) #56 SMP Thu Sep 7 17:22:07 BST 2017
 $ sudo insmod kwriter.ko
 $ ./chkresults
 Starting comparision beteen dmesg and okernel log

@@ -8,7 +8,7 @@ by default).
 
 From the kvmod subdir:
 
-`$ make build`
+`$ make clean && make`
 `$ insmod ./kernel_vuln.ko`
 
 
@@ -16,11 +16,11 @@ From the kvmod subdir:
 
 From the pmc subdir:
 
-`$ make clean; make`
+`$ make clean && make`
 
 From the kvc subdir:
 
-`$ make clean; make`
+`$ make clean && make`
 
 Run in one shell:
 

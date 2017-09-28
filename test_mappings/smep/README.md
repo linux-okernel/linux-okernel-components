@@ -47,11 +47,11 @@ Create the file /etc/udev/rules.d/99-oktest.rules or similar as shown below
 ```
 $ cd /etc/udev/rules.d/
 $ vi 99-oktest.rules
-$ cat 99-oktest.rules 
+$ cat 99-oktest.rules
 # Rule for oktest
 KERNEL=="oktest", SUBSYSTEM=="oktest", MODE="0666"
 
-$ 
+$
 ```
 
 Remove and reinsert the module so it is available to non-root users:
@@ -65,6 +65,10 @@ simulating the exploit
 
 `./bypass <address of commit_creds> <address of prepare_kernel_cred>`
 
+or
+
+`./bypass $(sudo ./params.sh)`
+
 The script params.sh (needs to be run as root) can get the necessary
 addresses, or you can get them manually from /proc/kallsyms
 
@@ -74,6 +78,9 @@ logs to see what is going on.
 
 An example of the output in normal mode is shown below:
 ```
+$ cat /proc/self/okernel
+0
+$ # We are not in okernel mode
 $ id
 uid=1000(nje) gid=1000(nje) groups=1000(nje),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),115(lpadmin),116(sambashare),129(docker)
 $ ./bypass $(sudo ./params.sh)
@@ -86,12 +93,26 @@ OKTEST_EXEC done
 [+] got r00t ^_^
 $ id
 uid=0(root) gid=0(root) groups=0(root)
-$ 
+$
 ```
 
-In okernel mode "bypass" is killed on the first SMEP bypass attempt
-after printing
+Exit the root shell, and start a shell in okernel mode (see top level
+README file). Repeat the run of bypass in okernel mode. In okernel
+mode "bypass" is killed on the first SMEP bypass attempt after
+printing it is calling func1. You can check that okernel is detecting
+this by looking in the log file as shown belwo.
 
-`Calling OKTEST_EXEC to bypass SMEP with func1`
+```
+$ okernel_exec2 /bin/bash
+$ cat /proc/self/okernel
+1
+$ # We are in okernel mode
+$ ./bypass $(sudo ./params.sh)
+Count is 0
+Calling OKTEST_EXEC to bypass SMEP with func1
+$ sudo tail -1 /sys/kernel/debug/tracing/trace
+           <...>-4685  [008] ....  8367.519116: vmx_launch: [OK_SEC] [R, cpu(8),pid(4685)] : okernel blocking write to CR4: SMEP exploit attempt? (uid 1000, pid 4685, command bypass, access type 0, register 6, reg value 0x606e0)
+$
+```
 
 nigel.edwards@hpe.com

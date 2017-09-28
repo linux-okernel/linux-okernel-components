@@ -28,11 +28,12 @@ From the kvc subdir:
 
 Run in one shell:
 
-`\# ./pmc/protected\_memory\_client`
+`$ ./pmc/protected\_memory\_client`
 
 And in another:
 
-`\# ./kvc/kernel_vuln_client 0xAAAAAA (address from running the protected\_memory\_client prog)`
+`$ ./kvc/kernel_vuln_client 0xAAAAAA (address from running the protected\_memory\_client prog)`
+Repeat this in another shell that is **NOT in okernel mode**
 
 
 ## Building and running the test progs in a container

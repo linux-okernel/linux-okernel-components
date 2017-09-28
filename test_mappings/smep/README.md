@@ -17,7 +17,7 @@ To build:
 
 `make clean && make`
 
-`make clean -f makefile.bypass && make -f makefile.bpass`
+`make clean -f makefile.bypass && make -f makefile.bypass`
 
 To run:
 
@@ -100,7 +100,7 @@ Exit the root shell, and start a shell in okernel mode (see top level
 README file). Repeat the run of bypass in okernel mode. In okernel
 mode "bypass" is killed on the first SMEP bypass attempt after
 printing it is calling func1. You can check that okernel is detecting
-this by looking in the log file as shown belwo.
+this by looking in the log file as shown below.
 
 ```
 $ okernel_exec2 /bin/bash

@@ -20,10 +20,13 @@
 
 /*
  * The beginning and end of the kernel text region taken from
- * ./Documentation/x86/x86_64/mm.txt 
+ * ./arch/x86/include/asm/page_64_types.h and allowing for ASLR. Note
+ * the document in ./Documentation/x86/x86_64/mm.txt doesn't allow for
+ * ASLR.
  */
-#define START_KTEXT 0xffffffff80000000UL
-#define END_KTEXT   0xffffffff9fffffffUL
+#define START_KTEXT (0xffffffff80000000UL)
+#define ASLR__KERNEL_IMAGE_SIZE (unsigned long)(1024 * 1024 * 1024)
+#define END_KTEXT   (START_KTEXT + ASLR__KERNEL_IMAGE_SIZE)
 
 #define MAGIC_NO '4'
 static int count = 0;

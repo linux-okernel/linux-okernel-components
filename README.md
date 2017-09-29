@@ -1,4 +1,4 @@
-# ContainerOS Split Kernel Building / Running Instructions
+# linux-okernel building/running Instructions
 
 
 ## Building
@@ -7,7 +7,7 @@
 
 2. Checkout the 'linux-okernel' branch.
 
-3. Build that kernel using the 'okernel.config' file from the *build_configs* sub-directory as the '.config' for the kernel.
+3. Build that kernel using the config file matching the desired kernel version from the *build_configs* sub-directory as the '.config' for the kernel.
    Note: If you make modifications to the config file or create your own, ensure that __'CONFIG_VMAP_STACK' is NOT set__ and __'CONFIG_OKERNEL' IS set__ (i.e. CONFIG_OKERNEL=y).
 
 4. Build the userspace tools found in sub-directory *userspace_tools* of this repository (linux-okernel-components).
@@ -15,7 +15,7 @@
 
 ## Running
 
-To launch a shell in outer-kernel mode run:
+To launch a shell in outer-kernel mode run (as root):
 
 `$ ./userspace_tools/okernel_exec2 /bin/bash`
 
@@ -28,10 +28,10 @@ To run containers in outer-kernel mode you currently need to start the docker da
 
 `$ ./userspace_tools/okernel_exec2 /bin/bash`
 
-`$ docker daemon -D`
+`$ dockerd -D`
 
 
-Any containers then started via that daemon should be running in outer-kernel mode.
+Any containers started via that daemon should be running in outer-kernel mode.
 
 # Tests and demonstrations
 Build and run the tests and demonstration of protected memory. See 'test_mappings/README' for more information.

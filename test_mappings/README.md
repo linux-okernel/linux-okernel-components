@@ -22,5 +22,5 @@ POC exploit for CVE-2017-7308
 * vsys-update: write to the vsys memory page. Adapted from POC exploit
 for CVE-2016-8655.
 
-In addition, not intended for testing, just for archival and study:
+In addition, not intended for testing, just for archival purposes and study:
 * exploits: The POC exploits listed above and the motivation for our tests

@@ -1,1 +1,1 @@
-Various kernel configs for different architectures (x64/armv8) and build options (XPFO, etc.).
+Various kernel configs for different Linux kernel versions, architectures (x64/armv8) and build options (XPFO, etc.).

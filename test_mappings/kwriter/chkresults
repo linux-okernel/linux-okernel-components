@@ -27,7 +27,7 @@ def main():
     addresses = set() # The addresses too which we've written
     detected = set() # The set of addresses which okernel has detected as being written
     problems = False
-    sys.stdout.write("Starting comparision beteen dmesg and okernel log\n")
+    sys.stdout.write("Starting comparison between dmesg and okernel log\n")
     p = subprocess.Popen("dmesg", stdout=subprocess.PIPE)
     dmesg = p.communicate()[0]
     addresses.update(get_addresses(dmesg, "kwriter written to"))
@@ -46,7 +46,7 @@ def main():
         problems = True
     false_pos = detected.difference(addresses)
     if false_pos != set():
-        print "WARNING: additional writes detected to addreses {0}".format(false_pos)
+        print "WARNING: additional writes detected to addresses {0}".format(false_pos)
         problems = True
     if problems == False:
         print "Success: Linux-okernel detected changes to the following addresses {0}".format(detected)

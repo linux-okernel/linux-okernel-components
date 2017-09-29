@@ -1,6 +1,5 @@
 ifeq ($(KERNELRELEASE),)  
 
-KERNELDIR=~/linux-okernel
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build 
 PWD := $(shell pwd)  
 

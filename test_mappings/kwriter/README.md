@@ -13,8 +13,6 @@ To build:
 
 `make clean && make`
 
-`make clean -f makefile.bypass && make -f makefile.bpass`
-
 To run (**make sure you are in okernel mode - see top level README file**):
 
 `sudo insmod kwriter.ko`

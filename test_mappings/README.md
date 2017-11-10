@@ -17,8 +17,10 @@ Descriptions and instructions for running the exploit protection
 demonstration and tests are given in the subdirectory README.md files:
 * kwriter: general writing and patching of kernel code and data
 * protected-mem: demonstration of protected memory
-* smepsmap: smep bypass using a publicly known technique. Adapted from
+* smep: smep bypass using a publicly known technique. Adapted from
 POC exploit for CVE-2017-7308
+* user-mem-track: Tests tracking of userspace memory for older
+processors that do not support mode-based execute control for EPT
 * vsys-update: write to the vsys memory page. Adapted from POC exploit
 for CVE-2016-8655.
 

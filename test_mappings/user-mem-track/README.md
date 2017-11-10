@@ -37,5 +37,5 @@ If you have XPFO enabled, then you will get additional messages,
 because any userspace allocated page that we need to mark EPT_X should
 already be marked as userspace by XPFO. So we check that we agree with
 XPFO. Note that it is not the case that all pages marked as userspace
-by XPFO will be EPT_X. So we can just use XPFO to do our tracking. 
+by XPFO will be EPT_X. So we cannot just use XPFO to do our tracking. 
 

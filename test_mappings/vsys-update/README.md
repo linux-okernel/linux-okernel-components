@@ -14,15 +14,20 @@ shell. We are grateful to rebel for sharing their work.
 Since we the above bug has been fixed, we simulate by inserting kernel
 modules. Linux-okernel detects/prevents the write to the vsys area.
 
+__**CAVEAT EMPTOR: THIS WORKS ON A DUAL PROCESSOR Z640. ON OTHER
+MACHINES I'VE SEEN THE KERNEL HANG OR DEADLOCK.**__
+
+## Building
 For this test to work you will need to compile your kernel with the following options.
 
-CAVEAT EMPTOR: this works on a dual processor Z640. On other machines I've seen the kernel hang or deadlock.
 
 `CONFIG_LEGACY_VSYSCALL_NATIVE=y`
 
 `# CONFIG_LEGACY_VSYSCALL_EMULATE is not set`
 
-Then build using:
+Once you have set the options as above, build your kernel in the normal way.
+
+Then build this test code as follows:
 
 `make clean && make`
 

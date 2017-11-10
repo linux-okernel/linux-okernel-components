@@ -59,7 +59,7 @@ static void __exit oktest_module_exit(void)
 }
 
 module_init(oktest_module_init);
-module_exit(oktest__module_exit);
+module_exit(oktest_module_exit);
 
 
 MODULE_LICENSE("GPL");

@@ -1,22 +1,11 @@
-ifeq ($(KERNELRELEASE),)
+default: bypass
 
-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-PWD := $(shell pwd)
+bypass.o: bypass.c
+	gcc -c bypass.c -o bypass.o
 
-.PHONY: build clean
+bypass: bypass.o
+	gcc bypass.o -o bypass
 
-build:
-	$(MAKE)  -C $(KERNELDIR) M=$(PWD) modules
-
-install:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) \
-		INSTALL_MOD_PATH=$(INSTALL_ROOT) modules_install
 clean:
-	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c  *.symvers *.order
-else
-
-$(info Building with KERNELRELEASE = ${KERNELRELEASE})
-obj-m :=    cr4writer.o 
-
-
-endif
+	rm -f bypass.o
+	rm -f bypass

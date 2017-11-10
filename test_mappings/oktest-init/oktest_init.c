@@ -37,20 +37,20 @@ if not, write to:
 
 
 /*
- * Add Demonstrate linux-okernel SMAP/SMEP protection
+ * Initialize ok_test ioctl device
  */
 
-#define MN "cr4writer "
+#define MN "ok_test_init "
 void ok_test_dev_init(void);
 void ok_test_dev_remove(void);
 
-static int __init cr4w_module_init(void)
+static int __init oktest_module_init(void)
 {
 	ok_test_dev_init();
 	return 0;
 }
 
-static void __exit cr4w_module_exit(void)
+static void __exit oktest_module_exit(void)
 {
 	printk(MN "unloading");
 	ok_test_dev_remove();
@@ -58,10 +58,10 @@ static void __exit cr4w_module_exit(void)
 	return;
 }
 
-module_init(cr4w_module_init);
-module_exit(cr4w_module_exit);
+module_init(oktest_module_init);
+module_exit(oktest_module_exit);
 
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nigel Edwards");
-MODULE_DESCRIPTION("Demonstrate linux-okernel protection of CR4");
+MODULE_DESCRIPTION("Initialize ok_test ioctl for testing");

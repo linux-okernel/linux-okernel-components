@@ -8,7 +8,7 @@
 2. Checkout the 'linux-okernel' branch.
 
 3. Build that kernel using the config file matching the desired kernel version from the *build_configs* sub-directory as the '.config' for the kernel.
-   Note: If you make modifications to the config file or create your own, ensure that __'CONFIG_VMAP_STACK' is NOT set__ and __'CONFIG_OKERNEL' IS set__ (i.e. CONFIG_OKERNEL=y).
+   Note: If you make modifications to the config file or create your own, ensure that __'CONFIG_PAGE_TABLE_ISOLATION' is NOT set__,  __'CONFIG_VMAP_STACK' is NOT set__ and __'CONFIG_OKERNEL' IS set__ (i.e. CONFIG_OKERNEL=y).
 
 4. Build the userspace tools found in sub-directory *userspace_tools* of this repository (linux-okernel-components).
 
